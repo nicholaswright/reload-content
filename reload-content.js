@@ -28,8 +28,15 @@
                 query  = window.location.search.substring(1),
             	urlParams = {};
             
-            while (match = search.exec(query))
+            while (match = search.exec(query)) {
                 urlParams[decode(match[1])] = decode(match[2]);
+            }
+                
+            // Add a flag to the content type to indicate that the content is being 
+            // reloaded. This indicator allows the content to output different when
+            // it's reloaded, such as including some inline JavaScript which would
+            // fail otherwise.
+            urlParams['reload-content'] = true;
         
             $.get('/admin/controller/Content/loadContent', {
                 contentId: el.attr('data-reload-content'),
