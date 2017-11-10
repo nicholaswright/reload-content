@@ -20,7 +20,7 @@
             
             var element = el.attr('data-reload-content-element');
             if (element) {
-                if (element === 'true') {
+                if (element == 'true') {
                     el.on('click', function() {
                         reload();
                     });
@@ -61,6 +61,8 @@
                 while (match = search.exec(query)) {
                     params[decode(match[1])] = decode(match[2]);
                 }
+                
+                params['pathname'] = window.location.pathname;
             }
             
             function setParams() {
