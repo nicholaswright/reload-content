@@ -9,63 +9,70 @@
         return this.each(function() {
             
             var defaults = {
+                hiddenClass: 'hidden',
                 onComplete: function() {}
-                //variationIdSelector: '[data-variation-id]',
+                //variationIdSelector: '[data-variation-id]'
             };
             
-            var settings = $.extend({}, defaults, options),
-                el = $(this);
-                
-            // Convert the existing query string into an object
-            // We must pass this to the AJAX request so that the content type generated
-            // will include all of the settings. E.g. ?tag=blahblah
-            var match,
-                pl     = /\+/g,  // Regex for replacing addition symbol with a space
-                search = /([^&=]+)=?([^&]*)/g,
-                decode = function (s) { 
-                    return decodeURIComponent(s.replace(pl, " ")); 
-                },
-                query  = window.location.search.substring(1),
-            	urlParams = {};
+            var settings = $.extend({}, defaults, options);
+            var el = $(this);
+            var params = {};
             
-            while (match = search.exec(query)) {
-                urlParams[decode(match[1])] = decode(match[2]);
+            var element = el.attr('data-reload-content-element');
+            if (element) {
+                if (element === 'true') {
+                    el.on('click', function() {
+                        reload();
+                    });
+                }
+            } else {
+                reload();
             }
-                
-            // Add a flag to the content type to indicate that the content is being 
-            // reloaded. This indicator allows the content to output different when
-            // it's reloaded, such as including some inline JavaScript which would
-            // fail otherwise.
-            urlParams['reload-content'] = true;
-        
-            $.get('/admin/controller/Content/loadContent', {
-                contentId: el.attr('data-reload-content'),
-                getVars: urlParams
-            }, function(msg) {
-                
-                var newEl = $(msg);
-                el.replaceWith(newEl);
-                newEl.css({
-                    visibility: 'visible',
-                    display: 'block'
-                });
-                
-                settings.onComplete.call();
-                
-            /*
-                // If Bootstrap JS is loaded then any carousels that are reloaded
-                // must be started again.
-                var bootstrap3_enabled = (typeof $().emulateTransitionEnd == 'function');
-                if (bootstrap3_enabled) {
-                    $('.carousel').carousel();
-                }
-        
-                if ($.omcoreLightbox) {
-                    $.omcoreLightbox();
-                }
-            */
             
-            });
+            function reload() {
+                setQueryStringParams();
+                setParams();
+                
+                $.get('/controller/Content/loadContent', params, function(msg) {
+                    
+                    var targetSelector = el.attr('data-reload-content-target');
+                    var targetEl = targetSelector ? $(targetSelector) : el;
+                    
+                    var newEl = $(msg);
+                    targetEl.replaceWith(newEl);
+                    newEl.removeClass(settings.hiddenClass);
+                    
+                    settings.onComplete.call();
+                });
+            }
+            
+            function setQueryStringParams() {
+                // Convert the existing query string into an object
+                // We must pass this to the AJAX request so that the content type generated
+                // will include all of the settings. E.g. ?tag=blahblah
+                var match,
+                    pl     = /\+/g,  // Regex for replacing addition symbol with a space
+                    search = /([^&=]+)=?([^&]*)/g,
+                    decode = function (s) {
+                        return decodeURIComponent(s.replace(pl, " "));
+                    },
+                    query  = window.location.search.substring(1);
+                
+                while (match = search.exec(query)) {
+                    params[decode(match[1])] = decode(match[2]);
+                }
+            }
+            
+            function setParams() {
+                params['contentId'] = el.attr('data-reload-content');
+                
+                // Add a flag to the content type to indicate that the content is being
+                // reloaded. This indicator allows the content to output different when
+                // it's reloaded, such as including some inline JavaScript which would
+                // fail otherwise.
+                params['reloadContent'] = true;
+            }
+            
         });
     };
 })(jQuery);
